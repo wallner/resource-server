@@ -23,22 +23,33 @@
 
 package org.osiam.security.authorization;
 
-import java.util.*;
+import org.osiam.client.OsiamConnector;
+import org.osiam.client.exception.ConnectionInitializationException;
+import org.osiam.client.oauth.AccessToken;
+import org.osiam.client.oauth.Scope;
+import org.osiam.resources.scim.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.common.exceptions.InvalidTokenException;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.OAuth2Request;
+import org.springframework.security.oauth2.provider.token.AccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
+import org.springframework.stereotype.Service;
 
-import org.osiam.client.*;
-import org.osiam.client.oauth.*;
-import org.osiam.resources.scim.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.security.authentication.*;
-import org.springframework.security.core.*;
-import org.springframework.security.oauth2.common.*;
-import org.springframework.security.oauth2.common.exceptions.*;
-import org.springframework.security.oauth2.provider.*;
-import org.springframework.security.oauth2.provider.token.*;
-import org.springframework.stereotype.*;
+import java.util.*;
 
 @Service
 public class AccessTokenValidationService implements ResourceServerTokenServices {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccessTokenValidationService.class);
 
     private String authServerHome;
 
@@ -94,10 +105,8 @@ public class AccessTokenValidationService implements ResourceServerTokenServices
     /**
      * Revokes the access tokens of the user with the given ID.
      *
-     * @param id
-     *            the user ID
-     * @param token
-     *            the token to access the service
+     * @param id    the user ID
+     * @param token the token to access the service
      */
     public void revokeAccessTokens(String id, String token) {
         AccessToken accessToken = new AccessToken.Builder(token).build();
@@ -111,6 +120,10 @@ public class AccessTokenValidationService implements ResourceServerTokenServices
         AccessToken accessToken;
         try {
             accessToken = connector.validateAccessToken(new AccessToken.Builder(token).build());
+        } catch (ConnectionInitializationException e) {
+            String message = "Unable to retrieve access token from AuthServer " + authServerHome;
+            LOGGER.warn(message);
+            throw new InvalidTokenException(message);
         } catch (Exception e) {
             throw new InvalidTokenException("Your token is not valid", e);
         }

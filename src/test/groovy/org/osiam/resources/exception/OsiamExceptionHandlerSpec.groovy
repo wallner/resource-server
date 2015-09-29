@@ -24,9 +24,11 @@
 package org.osiam.resources.exception
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.osiam.client.exception.ConnectionInitializationException
 import org.osiam.resources.scim.User
 import org.springframework.http.HttpStatus
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class OsiamExceptionHandlerSpec extends Specification {
 
@@ -50,12 +52,17 @@ class OsiamExceptionHandlerSpec extends Specification {
         result.status == HttpStatus.BAD_REQUEST.toString()
     }
 
-    def 'status is set to INTERNAL_SERVER_ERROR when BackendFailureException occurs'() {
-        when:
-        def result = exceptionHandler.handleBackendFailure(new OsiamBackendFailureException())
-        then:
+    @Unroll
+    def 'status is set to INTERNAL_SERVER_ERROR when #exception occurs'() {
+        given:
+        def result = exceptionHandler.handleBackendFailure(exception)
+        expect:
         result.detail == "An internal error occurred"
         result.status == HttpStatus.INTERNAL_SERVER_ERROR.toString()
+
+        where:
+        exception << [new OsiamBackendFailureException(),
+                      new ConnectionInitializationException(IRRELEVANT)]
     }
 
     def 'status is set to CONFLICT when ResourceExistsException occurs'() {

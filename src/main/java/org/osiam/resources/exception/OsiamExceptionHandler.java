@@ -25,6 +25,7 @@ package org.osiam.resources.exception;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import org.osiam.client.exception.ConnectionInitializationException;
 import org.osiam.resources.scim.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,10 +63,10 @@ public class OsiamExceptionHandler extends ResponseEntityExceptionHandler {
         return produceErrorResponse(e.getMessage(), HttpStatus.CONFLICT);
     }
 
-    @ExceptionHandler(OsiamBackendFailureException.class)
+    @ExceptionHandler({OsiamBackendFailureException.class, ConnectionInitializationException.class})
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
-    public ErrorResponse handleBackendFailure(OsiamBackendFailureException e) {
+    public ErrorResponse handleBackendFailure(Exception e) {
         return produceErrorResponse("An internal error occurred", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
